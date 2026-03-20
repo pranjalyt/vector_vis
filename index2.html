@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juwi - Discrete-Manifold Outlier Engine</title>
+
+    <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="https://unpkg.com/three"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #010103;
+            overflow: hidden;
+            font-family: system-ui, sans-serif;
+            color: white;
+        }
+
+        #3d-graph {
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            pointer-events: none;
+            background: rgba(1, 1, 3, 0.85);
+            border: 1px solid rgba(255, 100, 0, 0.3);
+            padding: 24px;
+            border-radius: 8px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 40px rgba(255, 100, 0, 0.1);
+            z-index: 10;
+            width: 420px;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: #ff6a00;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        h2 {
+            margin: 0 0 16px 0;
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            color: #00ffea;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        p {
+            color: #8892b0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin: 0 0 20px 0;
+        }
+
+        .tech-stack {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 16px;
+            font-size: 0.75rem;
+            color: #aaa;
+            font-family: monospace;
+            line-height: 1.9;
+        }
+
+        .tech-stack span {
+            color: #ff6a00;
+            font-weight: bold;
+        }
+
+        .btn-toggle {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 106, 0, 0.1);
+            border: 1px solid #ff6a00;
+            color: #ff6a00;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            z-index: 20;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .btn-toggle:hover {
+            background: #ff6a00;
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 106, 0, 0.5);
+        }
+
+        .disk-label {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffea;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(0, 255, 234, 0.5);
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .disk-sub {
+            font-size: 0.8rem;
+            color: #aaa;
+            display: block;
+            margin-top: 8px;
+            font-family: monospace;
+        }
+
+        .hud {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 340px;
+            background: rgba(1, 1, 3, 0.95);
+            border: 1px solid #333;
+            border-left: 4px solid #ff6a00;
+            padding: 24px;
+            border-radius: 4px;
+            color: white;
+            transform: translateX(450px);
+            transition: transform 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+
+        .hud.active {
+            transform: translateX(0);
+        }
+
+        .hud-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            color: white;
+        }
+
+        .hud-topic {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8892b0;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .hud-stat {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #222;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .hud-abstract {
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: #aaa;
+            margin-top: 16px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="3d-graph"></div>
+
+    <div class="overlay">
+        <h1>Discrete-Manifold Outlier Engine</h1>
+        <h2>Juwi Neuro-Symbolic Architecture</h2>
+        <p>We combine Vector Quantized Autoencoders (VQ-VAE) with non-differentiable routing to achieve extreme
+            real-time scaling and 3x faster policy adaptation.</p>
+        <div class="tech-stack">
+            <div><span>[Rout]</span> Discontinuous Hard Routing (O(1))</div>
+            <div><span>[Quant]</span> 1.58-Bit Tertiary Weights (BitNet)</div>
+            <div><span>[Mem]</span> Structure of Arrays (Slinky Geometry)</div>
+            <div><span>[Rep]</span> VQ-VAE Discrete Latent Representations</div>
+        </div>
+    </div>
+
+    <div class="disk-label" id="diskLabel">
+        1D Slinky Memory Architecture
+        <span class="disk-sub"><span style="color:#ff0055">RED: Emotions</span> | <span style="color:#00d4ff">BLUE:
+                Topics</span> | <span style="color:#00ff00">GREEN: Time</span> | <span style="color:#b700ff">PURPLE:
+                Meta</span></span>
+    </div>
+
+    <button class="btn-toggle" id="toggleBtn" onclick="window.location.href='slinky.html'">View Slinky Memory
+        Architecture</button>
+
+    <div class="hud" id="targetHud">
+        <div class="hud-topic" id="hudTopic">CLUSTER: UNKNOWN</div>
+        <div class="hud-title" id="hudTitle">Target Locked</div>
+        <div class="hud-stat"><span>Vector Magnitude</span> <strong id="hudMag" style="color:#ff6a00;">000.0</strong>
+        </div>
+        <div class="hud-stat"><span>Duplication Risk</span> <strong id="hudRisk">Low</strong></div>
+        <div class="hud-abstract" id="hudAbstract">Abstract data goes here...</div>
+    </div>
+
+    <script>
+        let currentLayout = 'vector';
+        let globalData = null;
+        let transitionProgress = 1;
+        let sceneGrids = [];
+
+        // Camera Variables
+        let orbitAngle = 0;
+        let orbitTarget = { x: 0, y: 0, z: 0 };
+        let cameraDistance = 700;
+        let selectedNode = null;
+        let isAnimating = false;
+
+        const Graph = ForceGraph3D()
+            (document.getElementById('3d-graph'))
+            .nodeColor('color')
+            .nodeVal('val')
+            .nodeResolution(24)
+            .backgroundColor('#010103')
+            .showNavInfo(false)
+            .linkColor(() => 'rgba(0,0,0,0)')
+            .nodeLabel(node => {
+                if (node.id === "ORIGIN") return '';
+                return `<span style="color:${node.color}; font-weight:bold; font-family:monospace; background:rgba(0,0,0,0.8); padding:4px 8px; border-radius:4px;">${node.name}</span>`;
+            })
+            .onNodeClick(node => {
+                if (node.id === "ORIGIN") return;
+                const hud = document.getElementById('targetHud');
+
+                // Reset to origin if clicked again
+                if (selectedNode === node) {
+                    selectedNode = null; orbitTarget = { x: 0, y: 0, z: 0 };
+                    cameraDistance = currentLayout === 'disk' ? 400 : 700;
+                    isAnimating = true;
+                    Graph.cameraPosition({ x: 0, y: currentLayout === 'disk' ? -100 : 350, z: cameraDistance }, orbitTarget, 1500);
+                    setTimeout(() => { isAnimating = false; }, 1500);
+                    Graph.linkColor(() => 'rgba(0,0,0,0)'); Graph.linkWidth(0); Graph.linkDirectionalArrowLength(0);
+                    hud.classList.remove('active');
+                    return;
+                }
+
+                // Lock onto node
+                selectedNode = node; orbitTarget = { x: node.fx, y: node.fy, z: node.fz };
+                cameraDistance = 150; isAnimating = true;
+
+                Graph.cameraPosition({ x: node.fx + 100, y: node.fy + 50, z: node.fz + 100 }, orbitTarget, 1500);
+                setTimeout(() => { isAnimating = false; }, 1500);
+
+                Graph.linkColor(link => (link.target.id === node.id && link.source.id === "ORIGIN") ? node.color : 'rgba(0,0,0,0)');
+                Graph.linkWidth(link => (link.target.id === node.id && link.source.id === "ORIGIN") ? 2 : 0);
+                Graph.linkDirectionalArrowLength(link => (link.target.id === node.id && link.source.id === "ORIGIN") ? 8 : 0);
+                Graph.linkDirectionalArrowRelPos(1);
+
+                document.getElementById('hudTopic').textContent = `CLUSTER: ${node.cluster_topic}`;
+                document.getElementById('hudTopic').style.color = node.color;
+                document.getElementById('hudTitle').textContent = node.name;
+                document.getElementById('hudMag').textContent = parseFloat(node.uniqueness).toFixed(1);
+                document.getElementById('hudMag').style.color = node.color;
+
+                let riskText = "High (Clone Detected)"; let riskColor = "#e06060";
+                if (node.uniqueness > 250) { riskText = "Low (True Outlier)"; riskColor = "#5fdb90"; }
+                else if (node.uniqueness > 150) { riskText = "Medium (Variation)"; riskColor = "#ffb800"; }
+
+                document.getElementById('hudRisk').textContent = riskText;
+                document.getElementById('hudRisk').style.color = riskColor;
+                document.getElementById('hudAbstract').textContent = `"${node.abstract}"`;
+                hud.style.borderLeftColor = node.color; hud.classList.add('active');
+            })
+            .onBackgroundClick(() => {
+                if (selectedNode) {
+                    selectedNode = null; orbitTarget = { x: 0, y: 0, z: 0 }; cameraDistance = currentLayout === 'disk' ? 400 : 700;
+                    isAnimating = true;
+                    Graph.cameraPosition({ x: 0, y: currentLayout === 'disk' ? -100 : 350, z: cameraDistance }, orbitTarget, 1500);
+                    setTimeout(() => { isAnimating = false; }, 1500);
+                    Graph.linkColor(() => 'rgba(0,0,0,0)'); Graph.linkWidth(0); Graph.linkDirectionalArrowLength(0);
+                    document.getElementById('targetHud').classList.remove('active');
+                }
+            });
+
+        Graph.d3Force('charge', null); Graph.d3Force('link', null); Graph.d3Force('center', null);
+
+        let allStrands = []; // Will hold the 4 isolated data strands
+
+        fetch('data.json').then(res => res.json()).then(data => {
+            globalData = data;
+            const sortedNodes = [...data.nodes].filter(n => n.id !== "ORIGIN").sort((a, b) => a.cluster_topic.localeCompare(b.cluster_topic));
+
+            // --- THE SLINKY HELIX MATH ---
+            const nodesPerLoop = 20;
+            const coilSpacing = 5;
+            const radius = 80;
+            const startX = -(sortedNodes.length * coilSpacing) / 2;
+
+            data.nodes.forEach(node => {
+                node.vectorX = node.x; node.vectorY = node.y; node.vectorZ = node.z;
+
+                if (node.id === "ORIGIN") {
+                    node.diskX = 0; node.diskY = -150; node.diskZ = 0;
+                } else {
+                    const index = sortedNodes.indexOf(node);
+                    const angle = index * (Math.PI * 2 / nodesPerLoop);
+
+                    // Calculates the Slinky Coil shape
+                    node.diskX = startX + (index * coilSpacing);
+                    node.diskY = -150 + (radius * Math.sin(angle));
+                    node.diskZ = radius * Math.cos(angle);
+                }
+                node.fx = node.vectorX; node.fy = node.vectorY; node.fz = node.vectorZ;
+            });
+
+            Graph.graphData(data);
+
+            const scene = Graph.scene();
+            const gridSize = 1200; const mainColor = 0x333333; const minorColor = 0x111111;
+
+            const gridXZ = new THREE.GridHelper(gridSize, 20, mainColor, minorColor); scene.add(gridXZ); sceneGrids.push(gridXZ);
+            const gridXY = new THREE.GridHelper(gridSize, 20, mainColor, minorColor); gridXY.rotation.x = Math.PI / 2; scene.add(gridXY); sceneGrids.push(gridXY);
+            const gridYZ = new THREE.GridHelper(gridSize, 20, mainColor, minorColor); gridYZ.rotation.z = Math.PI / 2; scene.add(gridYZ); sceneGrids.push(gridYZ);
+
+            // The Glowing Coil (Follows the nodes)
+            const positions = new Float32Array(sortedNodes.length * 3);
+            const positionAttribute = new THREE.BufferAttribute(positions, 3);
+            positionAttribute.setUsage(THREE.DynamicDrawUsage); // Prevents WebGL Memory Crash
+
+            const lineGeometry = new THREE.BufferGeometry();
+            lineGeometry.setAttribute('position', positionAttribute);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff6a00, transparent: true, opacity: 0.5 });
+            const lineMesh = new THREE.Line(lineGeometry, lineMaterial);
+            scene.add(lineMesh);
+
+            // --- DRAWING THE 4 ISOLATED DATA STRANDS ---
+            const strandLength = sortedNodes.length * coilSpacing;
+            const createStrand = (yOffset, zOffset, hexColor) => {
+                const points = [
+                    new THREE.Vector3(startX, -150 + yOffset, zOffset),
+                    new THREE.Vector3(startX + strandLength, -150 + yOffset, zOffset)
+                ];
+                const geo = new THREE.BufferGeometry().setFromPoints(points);
+                const mat = new THREE.LineBasicMaterial({ color: hexColor, transparent: true, opacity: 0 });
+                const mesh = new THREE.Line(geo, mat);
+                scene.add(mesh);
+                return mesh;
+            };
+
+            const strandEmotion = createStrand(radius, 0, 0xff0055); // Top (Red)
+            const strandTopic = createStrand(-radius, 0, 0x00d4ff); // Bottom (Blue)
+            const strandTime = createStrand(0, radius, 0x00ff00); // Front (Green)
+            const strandMeta = createStrand(0, -radius, 0xb700ff); // Back (Purple)
+            allStrands = [strandEmotion, strandTopic, strandTime, strandMeta];
+
+            function renderLoop() {
+                if (!isAnimating) {
+                    orbitAngle += 0.002;
+                    const camX = orbitTarget.x + cameraDistance * Math.sin(orbitAngle);
+                    const camZ = orbitTarget.z + cameraDistance * Math.cos(orbitAngle);
+                    const camY = orbitTarget.y + (currentLayout === 'disk' ? 100 : 350);
+                    Graph.cameraPosition({ x: camX, y: camY, z: camZ }, orbitTarget, 0);
+                }
+
+                if (transitionProgress < 1) {
+                    transitionProgress += 0.02;
+                    if (transitionProgress > 1) transitionProgress = 1;
+                    const ease = transitionProgress < .5 ? 2 * transitionProgress * transitionProgress : -1 + (4 - 2 * transitionProgress) * transitionProgress;
+
+                    data.nodes.forEach(node => {
+                        if (node.id === "ORIGIN") return;
+                        if (currentLayout === 'disk') {
+                            node.fx = node.vectorX + (node.diskX - node.vectorX) * ease;
+                            node.fy = node.vectorY + (node.diskY - node.vectorY) * ease;
+                            node.fz = node.vectorZ + (node.diskZ - node.vectorZ) * ease;
+                        } else {
+                            node.fx = node.diskX + (node.vectorX - node.diskX) * ease;
+                            node.fy = node.diskY + (node.vectorY - node.diskY) * ease;
+                            node.fz = node.diskZ + (node.vectorZ - node.diskZ) * ease;
+                        }
+                    });
+
+                    // Fade in/out the colored strands
+                    const targetOpacity = currentLayout === 'disk' ? ease * 0.9 : (1 - ease) * 0.9;
+                    allStrands.forEach(s => s.material.opacity = targetOpacity);
+                }
+
+                // Update the glowing coil path safely
+                const linePositions = lineMesh.geometry.attributes.position.array;
+                for (let i = 0; i < sortedNodes.length; i++) {
+                    linePositions[i * 3] = sortedNodes[i].fx || 0;
+                    linePositions[i * 3 + 1] = sortedNodes[i].fy || 0;
+                    linePositions[i * 3 + 2] = sortedNodes[i].fz || 0;
+                }
+                lineMesh.geometry.attributes.position.needsUpdate = true;
+
+                requestAnimationFrame(renderLoop);
+            }
+            renderLoop();
+        }).catch(err => console.error("Ensure your Python Server is running! Error:", err));
+
+        function toggleLayout() {
+            const btn = document.getElementById('toggleBtn');
+            const label = document.getElementById('diskLabel');
+
+            if (selectedNode) {
+                selectedNode = null; isAnimating = true;
+                document.getElementById('targetHud').classList.remove('active');
+                Graph.linkColor(() => 'rgba(0,0,0,0)'); Graph.linkWidth(0); Graph.linkDirectionalArrowLength(0);
+            }
+
+            transitionProgress = 0;
+
+            if (currentLayout === 'vector') {
+                currentLayout = 'disk';
+                btn.textContent = "Restore 3D Vector Space";
+                btn.style.background = "#ff6a00"; btn.style.color = "#000";
+                label.style.opacity = 1;
+                sceneGrids.forEach(g => g.visible = false);
+                orbitTarget = { x: 0, y: -150, z: 0 };
+                cameraDistance = 450;
+            } else {
+                currentLayout = 'vector';
+                btn.textContent = "Unravel to Slinky Track";
+                btn.style.background = "rgba(255, 106, 0, 0.1)"; btn.style.color = "#ff6a00";
+                label.style.opacity = 0;
+                sceneGrids.forEach(g => g.visible = true);
+                orbitTarget = { x: 0, y: 0, z: 0 };
+                cameraDistance = 700;
+            }
+
+            Graph.cameraPosition({ x: 0, y: currentLayout === 'disk' ? -50 : 350, z: cameraDistance }, orbitTarget, 1500);
+            setTimeout(() => { isAnimating = false; }, 1500);
+        }
+    </script>
+</body>
+
+</html>

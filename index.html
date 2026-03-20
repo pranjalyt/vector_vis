@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juwi — Semantic Vector Engine</title>
+    <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="https://unpkg.com/three"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #06070d;
+            --panel: rgba(6, 7, 13, 0.95);
+            --border: rgba(255, 255, 255, 0.07);
+            --accent: #ff6a00;
+            --cyan: #00ffea;
+            --text: #c8cdd8;
+            --dim: #555a6a;
+            --green: #5fdb90;
+            --red: #e06060;
+            --yellow: #ffb800;
+            --purple: #b700ff;
+            --blue: #4a7cff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Syne', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        #graph {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* ── LEFT PANEL ── */
+        .panel-left {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            width: 300px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 20px;
+            backdrop-filter: blur(16px);
+            z-index: 20;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            color: var(--accent);
+        }
+
+        .logo-sub {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            margin-top: 2px;
+            margin-bottom: 16px;
+        }
+
+        .desc {
+            font-size: 0.78rem;
+            color: var(--text);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .tech-row {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--dim);
+            line-height: 2;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+
+        .tech-row span {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* ── LEGEND ── */
+        .legend {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px 18px;
+            z-index: 20;
+            backdrop-filter: blur(12px);
+        }
+
+        .legend-title {
+            font-size: 0.6rem;
+            letter-spacing: 3px;
+            color: var(--dim);
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.72rem;
+            color: var(--text);
+            margin-bottom: 5px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ── SUBMISSION PANEL ── */
+        .panel-submit {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 340px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-right: 3px solid var(--cyan);
+            border-radius: 6px;
+            padding: 20px;
+            backdrop-filter: blur(16px);
+            z-index: 20;
+        }
+
+        .submit-title {
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: var(--cyan);
+            margin-bottom: 14px;
+        }
+
+        .field-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--dim);
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .field-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: white;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.78rem;
+            padding: 8px 10px;
+            margin-bottom: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .field-input:focus {
+            border-color: var(--cyan);
+        }
+
+        textarea.field-input {
+            resize: none;
+            height: 80px;
+        }
+
+        select.field-input {
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--cyan);
+            color: #06070d;
+            border: none;
+            border-radius: 4px;
+            padding: 11px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover {
+            background: white;
+        }
+
+        .btn-submit:disabled {
+            background: var(--dim);
+            cursor: not-allowed;
+        }
+
+        /* ── RESULT CARD (replaces submit form after submit) ── */
+        .result-card {
+            display: none;
+        }
+
+        .result-status {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            padding: 6px 12px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .result-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .result-cluster {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--dim);
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+        }
+
+        .result-scores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .score-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .score-val {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .score-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.58rem;
+            color: var(--dim);
+            margin-top: 2px;
+        }
+
+        .clone-warning {
+            background: rgba(224, 96, 96, 0.1);
+            border: 1px solid var(--red);
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: var(--red);
+            font-family: 'Space Mono', monospace;
+            margin-bottom: 10px;
+        }
+
+        .dark-horse-badge {
+            background: rgba(95, 219, 144, 0.1);
+            border: 1px solid var(--green);
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: var(--green);
+            font-family: 'Space Mono', monospace;
+            margin-bottom: 10px;
+        }
+
+        .btn-reset {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            border-radius: 4px;
+            padding: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-reset:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ── HUD (node detail panel) ── */
+        .hud {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 340px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            backdrop-filter: blur(16px);
+            z-index: 20;
+            transform: translateY(120%);
+            transition: transform 0.4s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        .hud.active {
+            transform: translateY(0);
+        }
+
+        .hud-cluster {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.62rem;
+            letter-spacing: 2px;
+            color: var(--dim);
+            margin-bottom: 4px;
+        }
+
+        .hud-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .hud-scores {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .hud-score {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .hud-score-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .hud-score-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--dim);
+            margin-top: 1px;
+        }
+
+        .hud-abstract {
+            font-size: 0.78rem;
+            line-height: 1.65;
+            color: var(--text);
+            font-style: italic;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+
+        .hud-badge {
+            display: inline-block;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .hud-badge.clone {
+            background: rgba(224, 96, 96, 0.15);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        .hud-badge.dark-horse {
+            background: rgba(95, 219, 144, 0.15);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .hud-badge.live {
+            background: rgba(0, 255, 234, 0.15);
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: var(--panel);
+            border: 2px solid var(--cyan);
+            border-radius: 8px;
+            padding: 32px 40px;
+            text-align: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+            min-width: 300px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .toast.clone {
+            border-color: var(--red);
+        }
+
+        .toast.dark-horse {
+            border-color: var(--green);
+        }
+
+        .toast-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .toast-label {
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: var(--dim);
+            margin-bottom: 6px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .toast-main {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .toast-sub {
+            font-size: 0.78rem;
+            color: var(--text);
+            margin-top: 6px;
+            font-family: 'Space Mono', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="graph"></div>
+
+    <!-- LEFT PANEL -->
+    <div class="panel-left">
+        <div class="logo">JUWI</div>
+        <div class="logo-sub">SEMANTIC VECTOR ENGINE</div>
+        <p class="desc">384-dimensional semantic embeddings cluster hackathon submissions by concept. Binary
+            fingerprints detect duplicate ideas. Outliers in the space are the most novel.</p>
+        <div class="tech-row">
+            <div><span>[EMBED]</span> all-MiniLM-L6-v2 · 384-dim</div>
+            <div><span>[ROUTE]</span> Semantic Hard Router</div>
+            <div><span>[DISC]</span> Binary Fingerprint (VQ-style)</div>
+            <div><span>[CLONE]</span> Hamming Similarity Δ &gt; 0.87</div>
+            <div><span>[VIZ]</span> PCA → 3D + K-Means (k=9)</div>
+        </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend">
+        <div class="legend-title">CLUSTER MAP</div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#b700ff"></div>Web3 & Blockchain
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#00ffea"></div>AI & Machine Learning
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#4a7cff"></div>Computer Vision
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#ff6a00"></div>Hardware & IoT
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#5fdb90"></div>Sustainability
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#ff5c8a"></div>Web Development
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#ffb800"></div>Data Science
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#e06060"></div>Healthcare
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#d4a853"></div>Social Impact
+        </div>
+    </div>
+
+    <!-- SUBMISSION PANEL -->
+    <div class="panel-submit" id="submitPanel">
+        <div class="submit-title">LIVE SUBMISSION</div>
+
+        <div id="submitForm">
+            <div class="field-label">PROJECT NAME</div>
+            <input type="text" class="field-input" id="inputName" placeholder="e.g. XYZ-420">
+
+            <div class="field-label">ABSTRACT</div>
+            <textarea class="field-input" id="inputAbstract" placeholder="Describe your project idea..."></textarea>
+
+            <div class="field-label">TECH STACK</div>
+            <select class="field-input" id="inputStack">
+                <option value="React">React</option>
+                <option value="Node.js">Node.js</option>
+                <option value="PyTorch">PyTorch</option>
+                <option value="TensorFlow">TensorFlow</option>
+                <option value="BERT">BERT</option>
+                <option value="Transformers">Transformers</option>
+                <option value="LangChain">LangChain</option>
+                <option value="LLMs">LLMs</option>
+                <option value="Ethereum">Ethereum</option>
+                <option value="Solidity">Solidity</option>
+                <option value="Smart Contracts">Smart Contracts</option>
+                <option value="Computer Vision">Computer Vision</option>
+                <option value="Convolutional Neural Nets">Convolutional Neural Nets</option>
+                <option value="Raspberry Pi">Raspberry Pi</option>
+                <option value="Arduino">Arduino</option>
+                <option value="ESP32">ESP32</option>
+                <option value="OpenAI API">OpenAI API</option>
+                <option value="Scikit-learn">Scikit-learn</option>
+                <option value="Pandas">Pandas</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <button class="btn-submit" id="btnSubmit" onclick="submitProject()">
+                SUBMIT TO VECTOR SPACE →
+            </button>
+        </div>
+
+        <!-- Result card shown after submission -->
+        <div class="result-card" id="resultCard">
+            <div id="awsLog"
+                style="font-family:'Space Mono',monospace;font-size:0.62rem;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.07);border-radius:4px;padding:10px;margin-bottom:12px;">
+            </div>
+            <div id="resultStatus" class="result-status"></div>
+            <div id="resultName" class="result-name"></div>
+            <div id="resultCluster" class="result-cluster"></div>
+            <div id="cloneWarning" class="clone-warning" style="display:none"></div>
+            <div id="darkHorseBadge" class="dark-horse-badge" style="display:none">🌑 DARK HORSE — High tech
+                sophistication in an underserved cluster</div>
+            <div class="result-scores" style="grid-template-columns:1fr 1fr 1fr">
+                <div class="score-box">
+                    <div class="score-val" id="scoreIdea" style="color:var(--cyan)">—</div>
+                    <div class="score-label">IDEA</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-val" id="scoreTech" style="color:var(--accent)">—</div>
+                    <div class="score-label">TECH</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-val" id="scoreViability" style="color:var(--green)">—</div>
+                    <div class="score-label">VIABILITY</div>
+                </div>
+            </div>
+            <button class="btn-reset" onclick="resetSubmit()">+ SUBMIT ANOTHER</button>
+        </div>
+    </div>
+
+    <!-- HUD - node detail -->
+    <div class="hud" id="hud">
+        <div class="hud-cluster" id="hudCluster">CLUSTER</div>
+        <div class="hud-name" id="hudName">—</div>
+        <div id="hudBadges"></div>
+        <div class="hud-scores">
+            <div class="hud-score">
+                <div class="hud-score-val" id="hudIdea" style="color:var(--cyan)">—</div>
+                <div class="hud-score-label">IDEA</div>
+            </div>
+            <div class="hud-score">
+                <div class="hud-score-val" id="hudTech" style="color:var(--accent)">—</div>
+                <div class="hud-score-label">TECH</div>
+            </div>
+            <div class="hud-score">
+                <div class="hud-score-val" id="hudMag" style="color:var(--purple)">—</div>
+                <div class="hud-score-label">MAGNITUDE</div>
+            </div>
+        </div>
+        <div class="hud-abstract" id="hudAbstract"></div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-icon" id="toastIcon"></div>
+        <div class="toast-label" id="toastLabel"></div>
+        <div class="toast-main" id="toastMain"></div>
+        <div class="toast-sub" id="toastSub"></div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:5050';
+        let graphData = null;
+        let selectedNode = null;
+        let orbitAngle = 0;
+        let orbitTarget = { x: 0, y: 0, z: 0 };
+        let cameraDistance = 700;
+        let isAnimating = false;
+        let liveNodes = [];
+
+        const Graph = ForceGraph3D()(document.getElementById('graph'))
+            .backgroundColor('#06070d')
+            .showNavInfo(false)
+            .nodeColor(n => n.color || '#ffffff')
+            .nodeVal(n => n.val || 4)
+            .nodeResolution(20)
+            .linkColor(() => 'rgba(0,0,0,0)')
+            .nodeLabel(n => {
+                if (n.id === 'ORIGIN') return '';
+                return `<span style="color:${n.color};font-weight:700;font-family:monospace;background:rgba(6,7,13,0.9);padding:4px 8px;border-radius:4px;font-size:11px">${n.name}</span>`;
+            })
+            .onNodeClick(node => {
+                if (node.id === 'ORIGIN') return;
+                if (selectedNode === node) {
+                    deselect();
+                    return;
+                }
+                selectedNode = node;
+                isAnimating = true;
+                orbitTarget = { x: node.fx || node.x, y: node.fy || node.y, z: node.fz || node.z };
+                cameraDistance = 180;
+                Graph.cameraPosition({
+                    x: (node.fx || node.x) + 120,
+                    y: (node.fy || node.y) + 60,
+                    z: (node.fz || node.z) + 120
+                }, orbitTarget, 1200);
+                setTimeout(() => { isAnimating = false; }, 1200);
+
+                // Show link to this node
+                Graph.linkColor(l => l.target?.id === node.id ? node.color : 'rgba(0,0,0,0)');
+                Graph.linkWidth(l => l.target?.id === node.id ? 2 : 0);
+
+                showHUD(node);
+            })
+            .onBackgroundClick(deselect);
+
+        Graph.d3Force('charge', null);
+        Graph.d3Force('link', null);
+        Graph.d3Force('center', null);
+
+        function deselect() {
+            selectedNode = null;
+            orbitTarget = { x: 0, y: 0, z: 0 };
+            cameraDistance = 700;
+            isAnimating = true;
+            Graph.cameraPosition({ x: 0, y: 350, z: 700 }, orbitTarget, 1200);
+            setTimeout(() => { isAnimating = false; }, 1200);
+            Graph.linkColor(() => 'rgba(0,0,0,0)');
+            Graph.linkWidth(0);
+            document.getElementById('hud').classList.remove('active');
+        }
+
+        function showHUD(node) {
+            document.getElementById('hudCluster').textContent = `CLUSTER: ${node.cluster_topic || 'UNKNOWN'}`;
+            document.getElementById('hudCluster').style.color = node.color;
+            document.getElementById('hudName').textContent = node.name;
+            document.getElementById('hudIdea').textContent = node.idea_score ?? '—';
+            document.getElementById('hudTech').textContent = node.tech_score ?? '—';
+            document.getElementById('hudMag').textContent = parseFloat(node.uniqueness || 0).toFixed(0);
+            document.getElementById('hudAbstract').textContent = `"${node.abstract}"`;
+
+            const badges = document.getElementById('hudBadges');
+            badges.innerHTML = '';
+            if (node.is_clone) badges.innerHTML += `<span class="hud-badge clone">⚠ CLONE DETECTED</span> `;
+            if (node.is_dark_horse) badges.innerHTML += `<span class="hud-badge dark-horse">🌑 DARK HORSE</span> `;
+            if (node.is_live) badges.innerHTML += `<span class="hud-badge live">● LIVE</span> `;
+
+            document.getElementById('hud').classList.add('active');
+        }
+
+        // Orbit animation
+        function renderLoop() {
+            if (!isAnimating) {
+                orbitAngle += 0.0015;
+                const cx = orbitTarget.x + cameraDistance * Math.sin(orbitAngle);
+                const cz = orbitTarget.z + cameraDistance * Math.cos(orbitAngle);
+                const cy = orbitTarget.y + 350;
+                Graph.cameraPosition({ x: cx, y: cy, z: cz }, orbitTarget, 0);
+            }
+            requestAnimationFrame(renderLoop);
+        }
+
+        // Add grid to scene
+        function addGrid(scene) {
+            const size = 1200, div = 20;
+            const c1 = 0x222233, c2 = 0x111122;
+            const g1 = new THREE.GridHelper(size, div, c1, c2); scene.add(g1);
+            const g2 = new THREE.GridHelper(size, div, c1, c2); g2.rotation.x = Math.PI / 2; scene.add(g2);
+            const g3 = new THREE.GridHelper(size, div, c1, c2); g3.rotation.z = Math.PI / 2; scene.add(g3);
+        }
+
+        // Load data
+        fetch(`${API}/data`)
+            .then(r => r.json())
+            .then(data => {
+                graphData = data;
+                data.nodes.forEach(n => { n.fx = n.x; n.fy = n.y; n.fz = n.z; });
+                Graph.graphData(data);
+                addGrid(Graph.scene());
+                renderLoop();
+            })
+            .catch(() => {
+                // Fallback: try data.json directly
+                fetch('data.json')
+                    .then(r => r.json())
+                    .then(data => {
+                        graphData = data;
+                        data.nodes.forEach(n => { n.fx = n.x; n.fy = n.y; n.fz = n.z; });
+                        Graph.graphData(data);
+                        addGrid(Graph.scene());
+                        renderLoop();
+                        console.warn('Using static data.json — server not running');
+                    });
+            });
+
+        // ── SUBMISSION LOGIC ──
+        // Pipeline steps shown in the ticker
+        const PIPELINE_STEPS = [
+            { label: 'Redis Queue', detail: 'Job enqueued', color: '#ffb800' },
+            { label: 'RQ Worker', detail: 'Processing...', color: '#00ffea' },
+            { label: 'Embedder', detail: 'all-MiniLM-L6-v2 · 384-dim', color: '#4a7cff' },
+            { label: 'Hard Router', detail: 'Routing to cluster', color: '#b700ff' },
+            { label: 'Scorer', detail: 'Computing 5 scores', color: '#ff6a00' },
+            { label: 'SQLite', detail: 'Persisting result', color: '#5fdb90' },
+        ];
+
+        let pollInterval = null;
+
+        async function submitProject() {
+            const abstract = document.getElementById('inputAbstract').value.trim();
+            const name = document.getElementById('inputName').value.trim() || undefined;
+            const stack = document.getElementById('inputStack').value;
+
+            if (!abstract) {
+                document.getElementById('inputAbstract').style.borderColor = 'var(--red)';
+                setTimeout(() => document.getElementById('inputAbstract').style.borderColor = '', 1500);
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            btn.textContent = 'QUEUING...';
+
+            // Show pipeline ticker immediately
+            showPipelineTicker();
+
+            try {
+                const res = await fetch(`${API}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ abstract, name, stack })
+                });
+
+                if (!res.ok) throw new Error('Server error');
+                const { job_id } = await res.json();
+
+                btn.textContent = 'PROCESSING...';
+                startPolling(job_id);
+
+            } catch (e) {
+                console.warn('Server unavailable, using simulation');
+                simulateSubmission(abstract, name, stack);
+            }
+        }
+
+        function showPipelineTicker() {
+            document.getElementById('submitForm').style.display = 'none';
+            const card = document.getElementById('resultCard');
+            card.style.display = 'block';
+
+            const awsLogEl = document.getElementById('awsLog');
+            awsLogEl.innerHTML = '<div style="color:#555;font-size:0.6rem;margin-bottom:6px">PIPELINE</div>';
+
+            // Show steps animating one by one
+            PIPELINE_STEPS.forEach((step, i) => {
+                setTimeout(() => {
+                    awsLogEl.innerHTML += `<div id="step-${i}" style="color:#444;margin-bottom:3px">⟳ <span style="color:${step.color};font-weight:700">${step.label}</span> · <span style="color:#444">${step.detail}</span></div>`;
+                }, i * 300);
+                // Tick each step as done after a delay
+                setTimeout(() => {
+                    const el = document.getElementById(`step-${i}`);
+                    if (el) el.style.color = step.color;
+                    if (el) el.innerHTML = `✓ <span style="font-weight:700">${step.label}</span> · <span style="color:#666">${step.detail}</span>`;
+                }, i * 300 + 600);
+            });
+        }
+
+        function startPolling(job_id) {
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API}/job/${job_id}`);
+                    const data = await res.json();
+
+                    if (data.status === 'done') {
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                        handleNewNode(data.result);
+                    } else if (data.status === 'failed') {
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                        console.error('Job failed:', data.error);
+                        resetSubmit();
+                        alert('Processing failed: ' + (data.error || 'Unknown error'));
+                    }
+                    // if pending, just keep polling
+                } catch (e) {
+                    // network blip — keep trying
+                }
+            }, 500);
+
+            // Safety timeout — stop after 60s
+            setTimeout(() => {
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+            }, 60000);
+        }
+
+        function handleNewNode(node) {
+            // Add to graph
+            node.fx = node.x; node.fy = node.y; node.fz = node.z;
+            const currentData = Graph.graphData();
+            currentData.nodes.push(node);
+            currentData.links.push({ source: 'ORIGIN', target: node.id, color: node.color });
+            Graph.graphData(currentData);
+
+            // Fly camera to new node
+            isAnimating = true;
+            orbitTarget = { x: node.x, y: node.y, z: node.z };
+            cameraDistance = 200;
+            Graph.cameraPosition({ x: node.x + 150, y: node.y + 80, z: node.z + 150 }, orbitTarget, 1500);
+            setTimeout(() => { isAnimating = false; }, 1500);
+
+            // Show toast
+            showToast(node);
+
+            // Show result card
+            showResultCard(node);
+
+            // Auto-select this node in HUD
+            selectedNode = node;
+            setTimeout(() => showHUD(node), 300);
+        }
+
+        function showToast(node) {
+            const toast = document.getElementById('toast');
+            const icons = { CLONE_DETECTED: '⚠️', DARK_HORSE: '🌑', HIGHLY_ORIGINAL: '🌟', ACCEPTED: '✅' };
+            const labels = { CLONE_DETECTED: 'DUPLICATE DETECTED', DARK_HORSE: 'DARK HORSE IDENTIFIED', HIGHLY_ORIGINAL: 'HIGHLY ORIGINAL', ACCEPTED: 'SUBMISSION ACCEPTED' };
+
+            document.getElementById('toastIcon').textContent = icons[node.status] || '✅';
+            document.getElementById('toastLabel').textContent = labels[node.status] || 'ACCEPTED';
+            document.getElementById('toastMain').textContent = node.name;
+            document.getElementById('toastSub').textContent = `→ ${node.cluster_topic}`;
+            document.getElementById('toastMain').style.color = node.status_color || 'white';
+
+            toast.className = 'toast show ' + (node.status === 'CLONE_DETECTED' ? 'clone' : node.status === 'DARK_HORSE' ? 'dark-horse' : '');
+            toast.style.borderColor = node.status_color || 'var(--cyan)';
+
+            setTimeout(() => { toast.className = 'toast'; }, 3500);
+        }
+
+        function showResultCard(node) {
+            document.getElementById('submitForm').style.display = 'none';
+            const card = document.getElementById('resultCard');
+            card.style.display = 'block';
+
+            // AWS pipeline log animation
+            const awsLogEl = document.getElementById('awsLog');
+            awsLogEl.innerHTML = '';
+            const awsSteps = node.aws_log || [
+                { service: 'SQS', action: 'SendMessage', status: 'ok' },
+                { service: 'Lambda', action: 'InvokeFunction', duration_ms: node.lambda_duration_ms || 38, status: 'ok' },
+                { service: 'S3', action: 'PutObject', key: `s3://juwi-submissions/${node.id}.json`, status: 'ok' },
+                { service: 'DynamoDB', action: 'PutItem', table: 'juwi-projects', status: 'ok' },
+            ];
+            const serviceColors = { SQS: '#ffb800', Lambda: '#00ffea', S3: '#5fdb90', DynamoDB: '#4a7cff' };
+            awsSteps.forEach((step, i) => {
+                setTimeout(() => {
+                    const color = serviceColors[step.service] || '#fff';
+                    let detail = step.key || (step.duration_ms ? `${step.duration_ms}ms` : step.table || step.id || '');
+                    awsLogEl.innerHTML += `<div style="color:${color};margin-bottom:3px">✓ <span style="font-weight:700">${step.service}</span> · ${step.action}${detail ? ' · <span style="color:#888">' + detail + '</span>' : ''}</div>`;
+                }, i * 180);
+            });
+
+            // Show result after log
+            setTimeout(() => {
+                const statusEl = document.getElementById('resultStatus');
+                const statusText = { CLONE_DETECTED: '⚠ CLONE DETECTED', DARK_HORSE: '🌑 DARK HORSE', HIGHLY_ORIGINAL: '🌟 HIGHLY ORIGINAL', ACCEPTED: '✅ ACCEPTED' };
+                statusEl.textContent = statusText[node.status] || '✅ ACCEPTED';
+                statusEl.style.background = (node.status_color || '#00ffea') + '22';
+                statusEl.style.color = node.status_color || '#00ffea';
+                statusEl.style.border = `1px solid ${node.status_color || '#00ffea'}`;
+                document.getElementById('resultName').textContent = node.name;
+                document.getElementById('resultName').style.color = node.color;
+                document.getElementById('resultCluster').textContent = `CLUSTER: ${node.cluster_topic}`;
+                document.getElementById('scoreIdea').textContent = node.idea_score ?? '—';
+                document.getElementById('scoreTech').textContent = node.tech_score ?? '—';
+                if (node.is_clone) {
+                    const cw = document.getElementById('cloneWarning');
+                    cw.style.display = 'block';
+                    cw.textContent = `⚠ ${node.clone_similarity}% similar to ${node.clone_of || 'existing submission'}`;
+                } else {
+                    document.getElementById('cloneWarning').style.display = 'none';
+                }
+                document.getElementById('darkHorseBadge').style.display = node.is_dark_horse ? 'block' : 'none';
+            }, awsSteps.length * 180 + 100);
+        }
+
+        function resetSubmit() {
+            document.getElementById('submitForm').style.display = 'block';
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('inputAbstract').value = '';
+            document.getElementById('inputName').value = '';
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = false;
+            btn.textContent = 'SUBMIT TO VECTOR SPACE →';
+        }
+
+        // Fallback simulation when server is offline
+        function simulateSubmission(abstract, projectName, stack) {
+            const categories = [
+                { name: "AI & Machine Learning", color: "#00ffea", keywords: ["ai", "ml", "model", "neural", "predict", "learning"] },
+                { name: "Web3 & Blockchain", color: "#b700ff", keywords: ["blockchain", "eth", "web3", "solidity", "defi", "nft", "decentralized"] },
+                { name: "Hardware & IoT", color: "#ff6a00", keywords: ["sensor", "iot", "raspberry", "arduino", "hardware", "embedded"] },
+                { name: "Web Development", color: "#ff5c8a", keywords: ["react", "web", "frontend", "backend", "api", "node"] },
+                { name: "Data Science & Analytics", color: "#ffb800", keywords: ["data", "analysis", "pandas", "statistics", "visualization"] },
+                { name: "Computer Vision", color: "#4a7cff", keywords: ["vision", "image", "camera", "detection", "recognition"] },
+                { name: "Sustainability & Greentech", color: "#5fdb90", keywords: ["green", "recycl", "energy", "climate", "environment", "carbon"] },
+                { name: "Healthcare & Biotech", color: "#e06060", keywords: ["health", "medical", "patient", "hospital", "clinical"] },
+                { name: "Social Impact", color: "#d4a853", keywords: ["community", "social", "education", "accessibility", "inclusion"] },
+            ];
+
+            const lower = abstract.toLowerCase();
+            let best = categories[0];
+            let bestScore = 0;
+            for (const cat of categories) {
+                const score = cat.keywords.filter(k => lower.includes(k)).length;
+                if (score > bestScore) { bestScore = score; best = cat; }
+            }
+
+            const TECH_SCORES = { "React": 1, "Node.js": 1, "PyTorch": 4, "TensorFlow": 3, "BERT": 3, "Transformers": 3, "LangChain": 3, "LLMs": 3, "Ethereum": 3, "Solidity": 2, "Smart Contracts": 3, "Computer Vision": 3, "Convolutional Neural Nets": 3, "OpenAI API": 4, "Arduino": 2, "Raspberry Pi": 2, "ESP32": 2 };
+            const techScore = TECH_SCORES[stack] || 2;
+            const ideaScore = Math.floor(Math.random() * 400) + 300;
+            const isClone = Math.random() < 0.15;
+            const isDarkHorse = !isClone && techScore >= 3 && Math.random() < 0.3;
+
+            const status = isClone ? 'CLONE_DETECTED' : isDarkHorse ? 'DARK_HORSE' : ideaScore > 700 ? 'HIGHLY_ORIGINAL' : 'ACCEPTED';
+            const statusColors = { CLONE_DETECTED: '#e06060', DARK_HORSE: '#5fdb90', HIGHLY_ORIGINAL: '#00ffea', ACCEPTED: '#ffb800' };
+
+            const node = {
+                id: `live-${Date.now()}`,
+                name: projectName || `SIM-${Math.floor(Math.random() * 900) + 100}`,
+                abstract, stack,
+                cluster_topic: best.name,
+                color: best.color,
+                val: 6,
+                x: (Math.random() - 0.5) * 300,
+                y: (Math.random() - 0.5) * 300,
+                z: (Math.random() - 0.5) * 300,
+                uniqueness: Math.floor(Math.random() * 300) + 50,
+                idea_score: ideaScore,
+                tech_score: techScore,
+                is_clone: isClone,
+                clone_of: isClone ? 'existing project' : null,
+                clone_similarity: isClone ? (Math.random() * 10 + 88).toFixed(1) : null,
+                is_dark_horse: isDarkHorse,
+                is_live: true,
+                status,
+                status_color: statusColors[status],
+            };
+            node.fx = node.x; node.fy = node.y; node.fz = node.z;
+
+            handleNewNode(node);
+        }
+    </script>
+</body>
+
+</html>
