@@ -689,8 +689,23 @@
 
             const badges = document.getElementById('hudBadges');
             badges.innerHTML = '';
-            if (node.is_clone) badges.innerHTML += `<span class="hud-badge clone">⚠ CLONE DETECTED</span> `;
-            if (node.is_dark_horse) badges.innerHTML += `<span class="hud-badge dark-horse">🌑 DARK HORSE</span> `;
+            
+            if (node.status) {
+                const badgeLabels = {
+                    'CLONE_DETECTED': '⚠ CLONE DETECTED',
+                    'SIMILAR_PATTERN': '⚠ SIMILAR PATTERN',
+                    'UNIQUE': '✨ UNIQUE',
+                    'OUTLIER': '🌑 OUTLIER',
+                    'DARK_HORSE': '🌑 DARK HORSE',
+                    'HIGHLY_ORIGINAL': '🌟 HIGHLY ORIGINAL',
+                    'ACCEPTED': '✅ ACCEPTED'
+                };
+                badges.innerHTML += `<span class="hud-badge" style="background:${node.status_color}22; color: ${node.status_color}; border: 1px solid ${node.status_color}">${badgeLabels[node.status] || node.status}</span> `;
+            } else if (node.is_clone) {
+                badges.innerHTML += `<span class="hud-badge clone">⚠ CLONE DETECTED</span> `;
+            }
+            
+            if (node.is_dark_horse && node.status !== 'DARK_HORSE') badges.innerHTML += `<span class="hud-badge dark-horse">🌑 DARK HORSE</span> `;
             if (node.is_live) badges.innerHTML += `<span class="hud-badge live">● LIVE</span> `;
 
             document.getElementById('hud').classList.add('active');
@@ -972,11 +987,9 @@
             const TECH_SCORES = { "React": 1, "Node.js": 1, "PyTorch": 4, "TensorFlow": 3, "BERT": 3, "Transformers": 3, "LangChain": 3, "LLMs": 3, "Ethereum": 3, "Solidity": 2, "Smart Contracts": 3, "Computer Vision": 3, "Convolutional Neural Nets": 3, "OpenAI API": 4, "Arduino": 2, "Raspberry Pi": 2, "ESP32": 2 };
             const techScore = TECH_SCORES[stack] || 2;
             const ideaScore = Math.floor(Math.random() * 400) + 300;
-            const isClone = Math.random() < 0.15;
-            const isDarkHorse = !isClone && techScore >= 3 && Math.random() < 0.3;
-
-            const status = isClone ? 'CLONE_DETECTED' : isDarkHorse ? 'DARK_HORSE' : ideaScore > 700 ? 'HIGHLY_ORIGINAL' : 'ACCEPTED';
-            const statusColors = { CLONE_DETECTED: '#e06060', DARK_HORSE: '#5fdb90', HIGHLY_ORIGINAL: '#00ffea', ACCEPTED: '#ffb800' };
+            const uniqueness = Math.floor(Math.random() * 300) + 50;
+            const status = uniqueness < 100 ? 'CLONE_DETECTED' : uniqueness < 180 ? 'SIMILAR_PATTERN' : uniqueness < 260 ? 'UNIQUE' : 'OUTLIER';
+            const statusColors = { CLONE_DETECTED: '#e06060', SIMILAR_PATTERN: '#ffb800', UNIQUE: '#4a7cff', OUTLIER: '#5fdb90' };
 
             const node = {
                 id: `live-${Date.now()}`,

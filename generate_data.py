@@ -260,17 +260,41 @@ all_tech = [p["tech_score"] for p in projects_data]
 nodes = [{"id": "ORIGIN", "name": "Mathematical Zero", "cluster_topic": "Vector Origin", "color": "#ffffff", "val": 2, "x": 0.0, "y": 0.0, "z": 0.0, "abstract": "Center of all ideas.", "tech_score": 0, "idea_score": 0}]
 links = []
 
+final_coords = []
+final_magnitudes = []
 for i, proj in enumerate(projects_data):
     x, y, z = embeddings_3d[i]
-    c_id = cluster_labels[i]
     magnitude = np.linalg.norm([x, y, z])
     if (magnitude / 250) * 100 > 70:
         x *= 1.5; y *= 1.5; z *= 1.5
         magnitude = np.linalg.norm([x, y, z])
-    is_clone = proj["id"] in clone_lookup
+    final_coords.append((x, y, z))
+    final_magnitudes.append(magnitude)
+
+p25 = np.percentile(final_magnitudes, 25)
+p50 = np.percentile(final_magnitudes, 50)
+p75 = np.percentile(final_magnitudes, 75)
+
+for i, proj in enumerate(projects_data):
+    x, y, z = final_coords[i]
+    magnitude = final_magnitudes[i]
+    c_id = cluster_labels[i]
+
+    if magnitude <= p25:
+        status, status_color = "CLONE_DETECTED", "#e06060"
+    elif magnitude <= p50:
+        status, status_color = "SIMILAR_PATTERN", "#ffb800"
+    elif magnitude <= p75:
+        status, status_color = "UNIQUE", "#4a7cff"
+    else:
+        status, status_color = "OUTLIER", "#5fdb90"
+
+    is_clone = status == "CLONE_DETECTED"
+    
     tech_score = proj["tech_score"]
     cluster_size = sum(1 for l in cluster_labels if l == c_id)
     is_dark_horse = tech_score >= 3 and cluster_size <= 30 and not is_clone
+    
     nodes.append({
         "id": proj["id"], "name": proj["name"], "abstract": proj["abstract"], "stack": proj["stack"],
         "cluster_topic": cluster_names.get(c_id, "Unknown"), "cluster_id": int(c_id),
@@ -279,7 +303,8 @@ for i, proj in enumerate(projects_data):
         "idea_score": int(idea_scores_norm[i]), "tech_score": tech_score,
         "tech_percentile": int(round(np.mean(np.array(all_tech) <= tech_score) * 100)),
         "is_clone": is_clone, "clones": clone_lookup.get(proj["id"], []),
-        "is_dark_horse": is_dark_horse, "fingerprint": binary_fingerprints[i].tolist()
+        "is_dark_horse": is_dark_horse, "fingerprint": binary_fingerprints[i].tolist(),
+        "status": status, "status_color": status_color
     })
     links.append({"source": "ORIGIN", "target": proj["id"], "color": cluster_colors_map.get(c_id, "#ffffff")})
 
